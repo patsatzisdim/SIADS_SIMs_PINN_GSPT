@@ -108,8 +108,7 @@ for i = 1:RPnoRuns
     CV_L2(i,1) = norm(CV_SIM-XzCV,2);
 end
 
-%% Confidence intervals of training
-ts = tinv([0.025 0.05 0.1 0.9 0.95 0.975],RPnoRuns-1);   % T-Score
+%% mean, std and Confidence intervals of training assuming no normal distrinution
 muCPU = mean(CPUrecs); stdCPU = std(CPUrecs);
 muT2 = mean(trainL2); stdT2 = std(trainL2);
 muTinf = mean(trainLinf); stdTinf = std(trainLinf);
@@ -117,12 +116,17 @@ muTmse = mean(trainMSE); stdTmse = std(trainMSE);
 muV2 = mean(CV_L2); stdV2 = std(CV_L2);
 muVinf = mean(CV_Linf); stdVinf = std(CV_Linf);
 muVmse = mean(CV_MSE); stdVmse = std(CV_MSE);
-semCPU = stdCPU/sqrt(RPnoRuns);                          % Standard Errors
-semT2 = stdT2/sqrt(RPnoRuns); semTinf = stdTinf/sqrt(RPnoRuns); semTmse = stdTmse/sqrt(RPnoRuns);
-semV2 = stdV2/sqrt(RPnoRuns); semVinf = stdVinf/sqrt(RPnoRuns); semVmse = stdVmse/sqrt(RPnoRuns);
-ciCPU = muCPU + ts*semCPU;                               % Confidence Intervals
-ciT2 = muT2 + ts*semT2; ciTinf = muTinf + ts*semTinf; ciTmse = muTmse + ts*semTmse;
-ciV2 = muV2 + ts*semV2; ciVinf = muVinf + ts*semVinf; ciVmse = muVmse + ts*semVmse;
+runs4CIs = [floor(0.02*RPnoRuns) floor(0.05*RPnoRuns) floor(0.1*RPnoRuns) floor(0.9*RPnoRuns) floor(0.95*RPnoRuns) floor(0.98*RPnoRuns)];
+CPUrecsS = sort(CPUrecs,'ascend');
+trainL2s = sort(trainL2,'ascend');
+trainLinfs = sort(trainLinf,'ascend');
+trainMSEs = sort(trainMSE,'ascend');
+CV_L2s = sort(CV_L2,'ascend');
+CV_Linfs = sort(CV_Linf,'ascend');
+CV_MSEs = sort(CV_MSE,'ascend');
+ciCPU = CPUrecsS(runs4CIs);
+ciT2 = trainL2s(runs4CIs); ciTinf = trainLinfs(runs4CIs); ciTmse = trainMSEs(runs4CIs);
+ciV2 = CV_L2s(runs4CIs); ciVinf = CV_Linfs(runs4CIs); ciVmse = CV_MSEs(runs4CIs);
 
 %% Metrics on training
 fprintf('-------Training metrics--------\n')
@@ -138,9 +142,9 @@ fprintf('Errors (MSE):        mean             std             5-95 CI   \n');
 fprintf('Train Set:     %e      %e      %e   %e \n',muTmse,stdTmse,ciTmse(2),ciTmse(5));
 fprintf('CV Set:        %e      %e      %e   %e \n',muVmse,stdVmse,ciVmse(2),ciVmse(5));
 
-Tmetrics = array2table([muCPU stdCPU ciCPU; muT2 stdT2 ciT2; muTinf stdTinf ciTinf;...
-    muTmse stdTmse ciTmse; muV2 stdV2 ciV2; muVinf stdVinf ciVinf; muVmse stdVmse ciVmse],...
-    "VariableNames",{'mean','std','CI 2.5','CI 5.0','CI 10.0','CI 90.0','CI 95.0','CI 97.5'},...
+Tmetrics = array2table([muCPU stdCPU ciCPU'; muT2 stdT2 ciT2'; muTinf stdTinf ciTinf';...
+    muTmse stdTmse ciTmse'; muV2 stdV2 ciV2'; muVinf stdVinf ciVinf'; muVmse stdVmse ciVmse'],...
+    "VariableNames",{'mean','std','CI 2','CI 5','CI 10','CI 90','CI 95','CI 98'},...
     "RowNames",{'CPU','TrainL2','TrainLinf','TrainLmse','ValidL2','ValidLinf','ValidLmse'});
 save TMDDP2_trainMetric Tmetrics;
 
