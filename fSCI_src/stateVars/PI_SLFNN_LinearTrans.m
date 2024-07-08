@@ -35,12 +35,12 @@ fImpNR = true;
 
 %% many runs to get averages
 CPUrecs = zeros(RPnoRuns,1);
-trainMSE = zeros(RPnoRuns,2);
-CV_MSE = zeros(RPnoRuns,2);
-trainLinf = zeros(RPnoRuns,2);
-CV_Linf = zeros(RPnoRuns,2);
-trainL2 = zeros(RPnoRuns,2);
-CV_L2 = zeros(RPnoRuns,2);
+trainMSE = zeros(RPnoRuns,1);
+CV_MSE = zeros(RPnoRuns,1);
+trainLinf = zeros(RPnoRuns,1);
+CV_Linf = zeros(RPnoRuns,1);
+trainL2 = zeros(RPnoRuns,1);
+CV_L2 = zeros(RPnoRuns,1);
 learnedAll = zeros(RPnoRuns,inSz^2+Mfast*(hlSz*(inSz-Mfast+2)+1));
 for i = 1:RPnoRuns
     %% Form Data Sets
@@ -111,8 +111,7 @@ for i = 1:RPnoRuns
     end
 end
 
-%% Confidence intervals of training
-ts = tinv([0.025 0.05 0.1 0.9 0.95 0.975],RPnoRuns-1);   % T-Score
+%% mean, std and Confidence intervals of training assuming no normal distrinution
 muCPU = mean(CPUrecs); stdCPU = std(CPUrecs);
 muT2 = mean(trainL2); stdT2 = std(trainL2);
 muTinf = mean(trainLinf); stdTinf = std(trainLinf);
@@ -120,46 +119,36 @@ muTmse = mean(trainMSE); stdTmse = std(trainMSE);
 muV2 = mean(CV_L2); stdV2 = std(CV_L2);
 muVinf = mean(CV_Linf); stdVinf = std(CV_Linf);
 muVmse = mean(CV_MSE); stdVmse = std(CV_MSE);
-semCPU = stdCPU/sqrt(RPnoRuns);                          % Standard Errors
-semT2 = stdT2/sqrt(RPnoRuns); semTinf = stdTinf/sqrt(RPnoRuns); semTmse = stdTmse/sqrt(RPnoRuns);
-semV2 = stdV2/sqrt(RPnoRuns); semVinf = stdVinf/sqrt(RPnoRuns); semVmse = stdVmse/sqrt(RPnoRuns);
-ciCPU = muCPU + ts*semCPU;                               % Confidence Intervals
-ciT2 = muT2' + semT2'.*ts; ciTinf = muTinf' + semTinf'.*ts; ciTmse = muTmse' + semTmse'.*ts;
-ciV2 = muV2' + semV2'.*ts; ciVinf = muVinf' + semVinf'.*ts; ciVmse = muVmse' + semVmse'.*ts;
+runs4CIs = [floor(0.02*RPnoRuns) floor(0.05*RPnoRuns) floor(0.1*RPnoRuns) floor(0.9*RPnoRuns) floor(0.95*RPnoRuns) floor(0.98*RPnoRuns)];
+CPUrecsS = sort(CPUrecs,'ascend');
+trainL2s = sort(trainL2,'ascend');
+trainLinfs = sort(trainLinf,'ascend');
+trainMSEs = sort(trainMSE,'ascend');
+CV_L2s = sort(CV_L2,'ascend');
+CV_Linfs = sort(CV_Linf,'ascend');
+CV_MSEs = sort(CV_MSE,'ascend');
+ciCPU = CPUrecsS(runs4CIs);
+ciT2 = trainL2s(runs4CIs); ciTinf = trainLinfs(runs4CIs); ciTmse = trainMSEs(runs4CIs);
+ciV2 = CV_L2s(runs4CIs); ciVinf = CV_Linfs(runs4CIs); ciVmse = CV_MSEs(runs4CIs);
 
 %% Metrics on training
 fprintf('-------Training metrics--------\n')
 fprintf('CPU times:           mean             std             5-95 CI   \n');
 fprintf('               %e      %e      %e   %e \n',muCPU,stdCPU,ciCPU(2),ciCPU(5));
-fprintf('Errors on the first variable! \n')
 fprintf('Errors (L2):         mean             std             5-95 CI   \n');
-fprintf('Train Set:     %e      %e      %e   %e \n',muT2(1,1),stdT2(1,1),ciT2(1,2),ciT2(1,5));
-fprintf('CV Set:        %e      %e      %e   %e \n',muV2(1,1),stdV2(1,1),ciV2(1,2),ciV2(1,5));
+fprintf('Train Set:     %e      %e      %e   %e \n',muT2,stdT2,ciT2(2),ciT2(5));
+fprintf('CV Set:        %e      %e      %e   %e \n',muV2,stdV2,ciV2(2),ciV2(5));
 fprintf('Errors (Linf):       mean             std             5-95 CI   \n');
-fprintf('Train Set:     %e      %e      %e   %e \n',muTinf(1,1),stdTinf(1,1),ciTinf(1,2),ciTinf(1,5));
-fprintf('CV Set:        %e      %e      %e   %e \n',muVinf(1,1),stdVinf(1,1),ciVinf(1,2),ciVinf(1,5));
+fprintf('Train Set:     %e      %e      %e   %e \n',muTinf,stdTinf,ciTinf(2),ciTinf(5));
+fprintf('CV Set:        %e      %e      %e   %e \n',muVinf,stdVinf,ciVinf(2),ciVinf(5));
 fprintf('Errors (MSE):        mean             std             5-95 CI   \n');
-fprintf('Train Set:     %e      %e      %e   %e \n',muTmse(1,1),stdTmse(1,1),ciTmse(1,2),ciTmse(1,5));
-fprintf('CV Set:        %e      %e      %e   %e \n',muVmse(1,1),stdVmse(1,1),ciVmse(1,2),ciVmse(1,5));
-fprintf('Errors on the second variable! \n')
-fprintf('Errors (L2):         mean             std             5-95 CI   \n');
-fprintf('Train Set:     %e      %e      %e   %e \n',muT2(1,2),stdT2(1,2),ciT2(2,2),ciT2(2,5));
-fprintf('CV Set:        %e      %e      %e   %e \n',muV2(1,2),stdV2(1,2),ciV2(2,2),ciV2(2,5));
-fprintf('Errors (Linf):       mean             std             5-95 CI   \n');
-fprintf('Train Set:     %e      %e      %e   %e \n',muTinf(1,2),stdTinf(1,2),ciTinf(2,2),ciTinf(2,5));
-fprintf('CV Set:        %e      %e      %e   %e \n',muVinf(1,2),stdVinf(1,2),ciVinf(2,2),ciVinf(2,5));
-fprintf('Errors (MSE):        mean             std             5-95 CI   \n');
-fprintf('Train Set:     %e      %e      %e   %e \n',muTmse(1,2),stdTmse(1,2),ciTmse(2,2),ciTmse(2,5));
-fprintf('CV Set:        %e      %e      %e   %e \n',muVmse(1,2),stdVmse(1,2),ciVmse(2,2),ciVmse(2,5));
+fprintf('Train Set:     %e      %e      %e   %e \n',muTmse,stdTmse,ciTmse(2),ciTmse(5));
+fprintf('CV Set:        %e      %e      %e   %e \n',muVmse,stdVmse,ciVmse(2),ciVmse(5));
 
-Tmetrics = array2table([muCPU stdCPU ciCPU; muT2(1,1) stdT2(1,1) ciT2(1,:); muTinf(1,1) stdTinf(1,1) ciTinf(1,:);...
-    muTmse(1,1) stdTmse(1,1) ciTmse(1,:); muV2(1,1) stdV2(1,1) ciV2(1,:); muVinf(1,1) stdVinf(1,1) ciVinf(1,:); ...
-    muVmse(1,1) stdVmse(1,1) ciVmse(1,:); muT2(1,2) stdT2(1,2) ciT2(2,:); muTinf(1,2) stdTinf(1,2) ciTinf(2,:);...
-    muTmse(1,2) stdTmse(1,2) ciTmse(2,:); muV2(1,2) stdV2(1,2) ciV2(2,:); muVinf(1,2) stdVinf(1,2) ciVinf(2,:); ... 
-    muVmse(1,2) stdVmse(1,2) ciVmse(2,:)],...
-    "VariableNames",{'mean','std','CI 2.5','CI 5.0','CI 10.0','CI 90.0','CI 95.0','CI 97.5'},...
-    "RowNames",{'CPU','TrainL2 1st','TrainLinf 1st','TrainLmse 1st','ValidL2 1st','ValidLinf 1st','ValidLmse 1st',...
-    'TrainL2 2nd','TrainLinf 2nd','TrainLmse 2nd','ValidL2 2nd','ValidLinf 2nd','ValidLmse 2nd'});
+Tmetrics = array2table([muCPU stdCPU ciCPU'; muT2 stdT2 ciT2'; muTinf stdTinf ciTinf';...
+    muTmse stdTmse ciTmse'; muV2 stdV2 ciV2'; muVinf stdVinf ciVinf'; muVmse stdVmse ciVmse'],...
+    "VariableNames",{'mean','std','CI 2','CI 5','CI 10','CI 90','CI 95','CI 98'},...
+    "RowNames",{'CPU','TrainL2','TrainLinf','TrainLmse','ValidL2','ValidLinf','ValidLmse'});
 save CompInh_trainMetric Tmetrics;
 
 %% Test Set errors 
