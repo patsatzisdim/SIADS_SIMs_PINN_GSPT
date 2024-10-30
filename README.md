@@ -4,7 +4,7 @@
 
 **Patsatzis, D. G., Russo, L., & Siettos, C. (2024). A physics-informed neural network method for the approximation of slow invariant manifolds for the general class of stiff systems of ODEs. arXiv preprint arXiv:2403.11591.**
 
-*Under review in SIAM Journal of Applied Dynamical Systems*
+*Accepted in SIAM Journal of Applied Dynamical Systems*
 
 Last updated by Patsatzis D. G., 4 Jul 2024
 
